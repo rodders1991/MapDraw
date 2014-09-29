@@ -1,1 +1,816 @@
-ds
+ <script type="text/javascript" src="jQueryV1.11.1.js"></script>
+   
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA2OxtZG2jUkE3-2pb6R4rc-VcWn3x35LQ&sensor=true">
+    </script>
+    <script>
+	
+	
+var TILE_SIZE = 256;
+
+function bound(value, opt_min, opt_max) {
+  if (opt_min != null) value = Math.max(value, opt_min);
+  if (opt_max != null) value = Math.min(value, opt_max);
+  return value;
+}
+
+function degreesToRadians(deg) {
+  return deg * (Math.PI / 180);
+}
+
+function radiansToDegrees(rad) {
+  return rad / (Math.PI / 180);
+}
+
+/** @constructor */
+function MercatorProjection() {
+  this.pixelOrigin_ = new google.maps.Point(TILE_SIZE / 2,
+      TILE_SIZE / 2);
+  this.pixelsPerLonDegree_ = TILE_SIZE / 360;
+  this.pixelsPerLonRadian_ = TILE_SIZE / (2 * Math.PI);
+}
+
+MercatorProjection.prototype.fromLatLngToPoint = function(latLng,
+    opt_point) {
+  var me = this;
+  var point = opt_point || new google.maps.Point(0, 0);
+  var origin = me.pixelOrigin_;
+
+  point.x = origin.x + latLng.lng() * me.pixelsPerLonDegree_;
+
+  // Truncating to 0.9999 effectively limits latitude to 89.189. This is
+  // about a third of a tile past the edge of the world tile.
+  var siny = bound(Math.sin(degreesToRadians(latLng.lat())), -0.9999,
+      0.9999);
+  point.y = origin.y + 0.5 * Math.log((1 + siny) / (1 - siny)) *
+      -me.pixelsPerLonRadian_;
+  return point;
+};
+
+MercatorProjection.prototype.fromPointToLatLng = function(point) {
+  var me = this;
+  var origin = me.pixelOrigin_;
+  var lng = (point.x - origin.x) / me.pixelsPerLonDegree_;
+  var latRadians = (point.y - origin.y) / -me.pixelsPerLonRadian_;
+  var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) -
+      Math.PI / 2);
+  return new google.maps.LatLng(lat, lng);
+};
+
+	</script>
+    <script type="text/javascript">
+    var directionsDisplay;
+var directionsService = new google.maps.DirectionsService();
+var map;
+
+function initialize() {
+  directionsDisplay = new google.maps.DirectionsRenderer();
+  var chicago = new google.maps.LatLng(41.850033,-87.6500523);
+  var mapOptions = {
+    zoom:3,
+    center: chicago,
+	streetViewControl: false,
+	mapTypeControl: false,
+	panControl: false,
+	zoomControl: false,
+	disableDoubleClickZoom: true,
+	styles: [
+    {
+        "featureType": "water",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "visibility": "on"
+            },
+            {
+                "color": "#aee2e0"
+            }
+        ]
+    },
+    {
+        "featureType": "landscape",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "color": "#abce83"
+            }
+        ]
+    },
+    {
+        "featureType": "poi",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "color": "#769E72"
+            }
+        ]
+    },
+    {
+        "featureType": "poi",
+        "elementType": "labels.text.fill",
+        "stylers": [
+            {
+                "color": "#7B8758"
+            }
+        ]
+    },
+    {
+        "featureType": "poi",
+        "elementType": "labels.text.stroke",
+        "stylers": [
+            {
+                "color": "#EBF4A4"
+            }
+        ]
+    },
+    {
+        "featureType": "poi.park",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "visibility": "simplified"
+            },
+            {
+                "color": "#8dab68"
+            }
+        ]
+    },
+    {
+        "featureType": "road",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "visibility": "simplified"
+            }
+        ]
+    },
+    {
+        "featureType": "road",
+        "elementType": "labels.text.fill",
+        "stylers": [
+            {
+                "color": "#5B5B3F"
+            }
+        ]
+    },
+    {
+        "featureType": "road",
+        "elementType": "labels.text.stroke",
+        "stylers": [
+            {
+                "color": "#ABCE83"
+            }
+        ]
+    },
+    {
+        "featureType": "road",
+        "elementType": "labels.icon",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "road.local",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#A4C67D"
+            }
+        ]
+    },
+    {
+        "featureType": "road.arterial",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#9BBF72"
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#EBF4A4"
+            }
+        ]
+    },
+    {
+        "featureType": "transit",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "visibility": "on"
+            },
+            {
+                "color": "#87ae79"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "color": "#7f2200"
+            },
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "labels.text.stroke",
+        "stylers": [
+            {
+                "color": "#ffffff"
+            },
+            {
+                "visibility": "on"
+            },
+            {
+                "weight": 4.1
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "labels.text.fill",
+        "stylers": [
+            {
+                "color": "#495421"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative.neighborhood",
+        "elementType": "labels",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    }
+]
+  }
+  map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+  directionsDisplay.setMap(map);
+  
+}
+</script>
+
+<!doctype html>
+<html>
+<head>
+<style>
+
+body
+{
+	margin:0;
+	padding:0;
+}
+
+#wrapper
+{
+	width:100%;
+	height:100%;
+}
+
+#drawWrap
+{
+	width:100%;
+	height:100%;
+	position:absolute;
+	z-index:2;
+	cursor:url(drawCursor.png),auto;
+}
+#map-canvas
+{
+	width:100%;
+	height:100%;
+}
+
+#toggleBar
+{
+	position:fixed;
+	width:700px;
+	height:100px;
+	background-color:rgba(179,255,108,0.40);
+	border-top-left-radius:30px;
+	border-top-right-radius:30px;
+	z-index:3;
+}
+
+.but
+{
+	width:70px;
+	height:70px;
+	margin:15px 35px;
+	float:left;
+	cursor:pointer;
+}
+
+#zoomOut
+{
+	background-image:url(zoomOut1.png);
+}
+
+#zoomOut:hover
+{
+	background-image:url(zoomOut2.png);
+}
+
+#zoomIn
+{
+	background-image:url(zoomIn1.png);
+}
+
+#zoomIn:hover
+{
+	background-image:url(zoomIn2.png);
+}
+
+#find
+{
+	text-align: center;
+	font-size: 25px;
+	font-family: acme;
+	font-style: normal;
+	font-weight: 400;
+	color:#535D78;
+}
+
+#find:hover
+{
+	color:#0747E7;
+}
+
+.drawStart
+{
+	background-image:url(draw.png);
+}
+
+.drawStart:hover
+{
+	background-image:url(draw2.png);
+}
+
+.drawEnd
+{
+	background-image:url(draw2.png);
+}
+
+
+#undo
+{
+	background-image:url(undo.png);
+}
+
+#undo:hover
+{
+	background-image:url(undo2.png);
+}
+
+.dot 
+{
+	width:2px;
+	height:2px;
+	position:fixed;
+	background-color:#000000;
+}
+
+@media screen and (max-width:499px) {
+	
+
+}
+</style>
+<meta charset="UTF-8">
+<title>Untitled Document</title>
+<!--The following script tag downloads a font from the Adobe Edge Web Fonts server for use within the web page. We recommend that you do not modify it.--><script>var __adobewebfontsappname__="dreamweaver"</script><script src="http://use.edgefonts.net/acme:n4:default.js" type="text/javascript"></script>
+</head>
+
+<body onLoad="initialize()">
+
+
+<div id="wrapper">
+<div id="drawWrap" style="display:none">
+
+
+<svg height="100%" width="100%">
+  <polyline id="line" points=""
+  style="fill:none;stroke:black;stroke-width:1" />
+</svg>
+</div>
+<div id="map-canvas"></div>
+
+
+
+
+
+</div>
+
+
+
+<div id="toggleBar">
+    	<div id="zoomOut" class="but"></div>
+        <div id="undo" class="but"></div>
+        <div id="find" class="but">Find A Way</div>
+        <div id="draw" class="but drawStart"></div>
+        <div id="zoomIn" class="but"></div>
+	</div>
+
+<p id="error"></p>
+</body>
+</html>
+
+<script>
+
+
+$("#zoomIn").click(function()
+{
+	var myZoom = map.getZoom() + 1;
+	map.setZoom(myZoom);
+});
+
+
+$("#zoomOut").click(function()
+{
+	var myZoom = map.getZoom() -1;
+	map.setZoom(myZoom);
+});
+
+$('#draw').click(function() { 
+
+$("#drawWrap").toggle();
+document.getElementById("line").setAttribute('points', '' );
+
+$('#draw').toggleClass("drawEnd");
+$('#draw').toggleClass('drawStart');
+
+});
+
+var marginTop = window.innerHeight - 100;
+var marginLeft = (window.innerWidth - 700)/2;
+
+$("#toggleBar").css("top",marginTop);
+$("#toggleBar").css("left",marginLeft);
+
+setInterval(function() {
+	marginTop = window.innerHeight - 100;
+	marginLeft = (window.innerWidth - 700)/2;
+	
+	$("#toggleBar").css("top",marginTop);
+	$("#toggleBar").css("left",marginLeft);
+	
+},100);
+
+</script>
+
+<script>
+var points = '';
+var dragging = false;
+var shaped = [];
+var error = '';
+
+$("#drawWrap").mousedown(function() {
+	dragging = true;
+	error = '';
+	shaped.length = 0;
+	
+$("#drawWrap").mousemove(function mouse(e)
+{
+	
+	if(dragging == true)
+	{
+		points += e.pageX+','+e.pageY+ ' ';
+		shaped.push({x:e.pageX,y:e.pageY});
+		document.getElementById("line").setAttribute('points', points );
+	}
+});
+
+});
+
+$('#drawWrap').on('mouseleave mouseup', function() {
+	
+	document.getElementById("line").setAttribute('points', '' );
+	dragging = false;
+	var intercept = {};
+	var shape = [];
+	var lines = [];
+	shape.length = 0;
+	lines.length = 0;
+	var intercepts = 0;
+	var n1;
+	var n2;
+	for(var i=0; i < shaped.length; i++)
+	{
+		if(i > 0)
+		{
+			if(shaped[i].x != shaped[i-1].x || shaped[i].y != shaped[i-1].y)
+			{
+				shape.push({x:shaped[i].x, y:shaped[i].y});
+				}
+			
+			
+		}else {shape.push({x:shaped[i].x,y:shaped[i].y}); }
+	}
+	
+	
+	
+	for(var i=0; i < (shape.length - 1); i++)
+	{
+		
+		
+		lines.push({x1:shape[i].x,y1:shape[i].y,x2:shape[i+1].x,y2:shape[i+1].y});
+	}
+	
+	
+	for(var i=0; i < lines.length; i++)
+	{
+	
+	for(var j=0; j < lines.length; j++)
+	{
+		
+		if(i == j) { continue; }
+		if(i+1 == j) {continue;}
+		if(i-1 == j) {continue; }
+		
+		var start1 = {x:lines[i].x1,y:lines[i].y1};
+		var end1 = {x:lines[i].x2,y:lines[i].y2};
+		
+		var start2 = {x:lines[j].x1,y:lines[j].y1};
+		var end2 = {x:lines[j].x2,y:lines[j].y2};
+		
+		var touch = doLineSegmentsIntersect(start1, end1, start2, end2);
+	
+		if(touch == true) {
+			
+			//error = lines[i].x2;
+ 
+			intercept = findPass(lines[i],lines[j]);
+	error = 'On Lines: ' + j + ' and: ' + i;
+	n1 = i;
+	n2 = j;
+	if(!isNaN(intercept.x) && !isNaN(intercept.y)) { 
+	
+	shape.length = 0;
+	var maxP = Math.max(i,j);
+	var minP = Math.min(i,j);
+	//shape.unshift(intercept);
+	for(var l = minP; l < maxP; l++) { shape.push({x:lines[l].x1,y:lines[l].y1}); }
+	shape.push(intercept);
+	shape.shift();
+	
+	var projection = new MercatorProjection();
+	
+	var numTiles = 1 << map.getZoom();
+	
+	var centerPixel = projection.fromLatLngToPoint(map.getCenter());
+	
+	var pixelCoordinate = new google.maps.Point(
+      centerPixel.x * numTiles,
+      centerPixel.y * numTiles);
+	  
+	  var changeX;
+	  var changeY;
+	  
+	  var polygonPoints = [];
+	  
+	for (var p = 0; p < shape.length; p++)
+	{
+		
+	if((window.innerWidth/2) > shape[p].x) { changeX = (window.innerWidth/2) + shape[p].x - window.innerWidth; }
+	if((window.innerWidth/2) < shape[p].x) { changeX = -(window.innerWidth/2) + shape[p].x ; }
+	if((window.innerWidth/2) == shape[p].x) { changeX = 0;}
+	
+	if((window.innerHeight/2) > shape[p].y) {changeY = (window.innerHeight/2) + shape[p].y - window.innerHeight;}
+	if((window.innerHeight/2) < shape[p].y) { changeY = -(window.innerHeight/2) + shape[p].y ;}
+	if((window.innerHeight/2) == shape[p].y) {changeY = 0;}
+	
+	shape[p].x = (pixelCoordinate.x + changeX)/(Math.pow(2, map.getZoom()));
+	shape[p].y = (pixelCoordinate.y + changeY)/(Math.pow(2, map.getZoom()));
+	
+	var myLatlng = projection.fromPointToLatLng(shape[p]);
+	
+	polygonPoints.push(myLatlng);
+  
+	}
+	
+	var polygon = new google.maps.Polygon({
+    paths: polygonPoints,
+    strokeColor: '#FF0000',
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: '#FF0000',
+    fillOpacity: 0.35
+  });
+
+ polygon.setMap(map);
+  
+ // polygonPoints.length = 0;
+  
+	document.getElementById("line").setAttribute('points', '' );
+	
+	
+
+	break; }
+		
+		  
+		 
+		 
+		 }
+		
+	}
+	
+	}
+	
+
+	document.getElementById('find').innerHTML = intercept.x + ' ' + intercept.y;
+	
+	 document.getElementById('error').innerHTML = JSON.stringify(lines[n1]) + ' ' + JSON.stringify(lines[n2]) + error; 
+	
+	intercept = 0
+	points = '';
+	lines.length = 0;
+	shape.length = 0;
+	shaped.length = 0;
+	
+})
+
+ 
+</script>
+
+<script>
+</script>
+
+<script>
+/**
+ * @author Peter Kelley
+ * @author pgkelley4@gmail.com
+ */
+
+/**
+ * See if two line segments intersect. This uses the 
+ * vector cross product approach described below:
+ * http://stackoverflow.com/a/565282/786339
+ * 
+ * @param {Object} p point object with x and y coordinates
+ *  representing the start of the 1st line.
+ * @param {Object} p2 point object with x and y coordinates
+ *  representing the end of the 1st line.
+ * @param {Object} q point object with x and y coordinates
+ *  representing the start of the 2nd line.
+ * @param {Object} q2 point object with x and y coordinates
+ *  representing the end of the 2nd line.
+ */
+function doLineSegmentsIntersect(p, p2, q, q2) {
+	var r = subtractPoints(p2, p);
+	var s = subtractPoints(q2, q);
+
+	var uNumerator = crossProduct(subtractPoints(q, p), r);
+	var denominator = crossProduct(r, s);
+
+	if (uNumerator == 0 && denominator == 0) {
+		// colinear, so do they overlap?
+		return ((q.x - p.x < 0) != (q.x - p2.x < 0) != (q2.x - p.x < 0) != (q2.x - p2.x < 0)) || 
+			((q.y - p.y < 0) != (q.y - p2.y < 0) != (q2.y - p.y < 0) != (q2.y - p2.y < 0));
+	}
+
+	if (denominator == 0) {
+		// lines are paralell
+		return false;
+	}
+
+	var u = uNumerator / denominator;
+	var t = crossProduct(subtractPoints(q, p), s) / denominator;
+
+	return (t >= 0) && (t <= 1) && (u >= 0) && (u <= 1);
+}
+
+/**
+ * Calculate the cross product of the two points.
+ * 
+ * @param {Object} point1 point object with x and y coordinates
+ * @param {Object} point2 point object with x and y coordinates
+ * 
+ * @return the cross product result as a float
+ */
+function crossProduct(point1, point2) {
+	return point1.x * point2.y - point1.y * point2.x;
+}
+
+/**
+ * Subtract the second point from the first.
+ * 
+ * @param {Object} point1 point object with x and y coordinates
+ * @param {Object} point2 point object with x and y coordinates
+ * 
+ * @return the subtraction result as a point object.
+ 
+  
+ var start1 = {x:0,y:0};
+ var end1 = {x:3,y:6};
+ var start2 = {x:3,y:0};
+ var end2 = {x:0,y:10};
+ doLineSegmentsIntersect(start1, end1, start2, end2);
+ */
+ 
+ 
+function subtractPoints(point1, point2) {
+	var result = {};
+	result.x = point1.x - point2.x;
+	result.y = point1.y - point2.y;
+
+	return result;
+}
+
+		function findPass(myLine1,myLine2)
+			{
+			var resultPoint = {};
+			var line1 = myLine1;
+			var line2 = myLine2;
+			
+			var rise1 = (line1.y2 - line1.y1);
+			var run1 = (line1.x2 - line1.x1);
+			
+			var rise2 = (line2.y2 - line2.y1);
+			var run2 = (line2.x2 - line2.x1);
+			
+			var myM1;// = rise1 / run1;
+			var myC1;// = line1.y1 - (myM1*line1.x1);
+			var myM2;// = rise2 / run2;
+			var myC2;// = line2.y1 - (myM2*line2.x1);
+			
+			if(rise1 == 0 || rise2 == 0 || run1 == 0 || run2 == 0)
+			{
+				
+			if(rise1 == 0 || rise2 == 0) {
+			
+			if(rise1 == 0) {myM1 = 0;}else{myM1 = rise1 / run1;}
+			if(rise2 == 0) {myM2 = 0;}else{myM2 = rise2 / run2;}
+			
+			
+			myC1 = line1.y1 - (myM1*line1.x1);
+			
+			myC2 = line2.y1 - (myM2*line2.x1);
+			
+		resultPoint.x = Math.round((myC2 - myC1) / (myM1 - myM2));
+		
+		resultPoint.y = Math.round((myM1 * resultPoint.x) + myC1);
+		
+			
+			}
+			
+			if(run1 == 0 || run2 == 0)
+			{
+				
+			if(run1 == 0) {myM1 = 0;}else{myM1 = run1 / rise1;}
+			if(run2 == 0) {myM2 = 0;}else{myM2 = run2 / rise2;}
+			
+			myC1 = line1.x1 - (myM1*line1.y1);
+			
+			myC2 = line2.x1 - (myM2*line2.y1);
+			
+		resultPoint.y = Math.round((myC2 - myC1) / (myM1 - myM2));
+		
+		resultPoint.x = Math.round((myM1 * resultPoint.y) + myC1);
+				
+			}
+		
+		
+			}
+			
+			if(rise1 != 0 && rise2 != 0 && run1 != 0 && run2 != 0)
+			{
+				
+			myM1 = rise1 / run1;
+			myC1 = line1.y1 - (myM1*line1.x1);
+			myM2 = rise2 / run2;
+			myC2 = line2.y1 - (myM2*line2.x1);
+			
+		resultPoint.x = Math.round((myC2 - myC1) / (myM1 - myM2));
+		
+		resultPoint.y = Math.round((myM1 * resultPoint.x) + myC1);
+		
+			}
+			
+			
+			
+		
+		
+		return resultPoint;
+		
+			}
+</script>
