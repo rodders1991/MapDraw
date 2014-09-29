@@ -490,7 +490,7 @@ document.getElementById("drawWrap").addEventListener('touchmove', function(e) {
 		shaped.push({x:e.pageX,y:e.pageY});
 		document.getElementById("line").setAttribute('points', points );
 	
-});
+},false);
 
 
 
@@ -638,7 +638,7 @@ document.getElementById("drawWrap").addEventListener('touchend',function() {
 	shape.length = 0;
 	shaped.length = 0;
 	
-})
+},false);
 
  
 </script>
