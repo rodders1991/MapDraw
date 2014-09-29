@@ -484,28 +484,19 @@ var dragging = false;
 var shaped = [];
 var error = '';
 
-$("#drawWrap").bind('mousedown touchstart',function() {
-	dragging = true;
-	error = '';
-	shaped.length = 0;
-	
-$("#drawWrap").bind('mousemove touchmove',function mouse(e)
-{
-	
-	if(dragging == true)
-	{
+document.getElementById("drawWrap").addEventListener('touchmove', function(e) {
+
 		points += e.pageX+','+e.pageY+ ' ';
 		shaped.push({x:e.pageX,y:e.pageY});
 		document.getElementById("line").setAttribute('points', points );
-	}
+	
 });
 
-});
 
-$('#drawWrap').bind('mouseleave mouseup touchend', function() {
+
+document.getElementById("drawWrap").addEventListener('touchend',function() {
 	
 	document.getElementById("line").setAttribute('points', '' );
-	dragging = false;
 	var intercept = {};
 	var shape = [];
 	var lines = [];
