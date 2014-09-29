@@ -438,20 +438,20 @@ body
 <script>
 
 
-$("#zoomIn").click(function()
+$("#zoomIn").on('tap',function()
 {
 	var myZoom = map.getZoom() + 1;
 	map.setZoom(myZoom);
 });
 
 
-$("#zoomOut").click(function()
+$("#zoomOut").on('tap',function()
 {
 	var myZoom = map.getZoom() -1;
 	map.setZoom(myZoom);
 });
 
-$('#draw').click(function() { 
+$('#draw').on('tap',function() { 
 
 $("#drawWrap").toggle();
 document.getElementById("line").setAttribute('points', '' );
@@ -642,9 +642,6 @@ document.getElementById("drawWrap").addEventListener('touchend',function() {
 	}
 	
 
-	document.getElementById('find').innerHTML = intercept.x + ' ' + intercept.y;
-	
-	 document.getElementById('error').innerHTML = JSON.stringify(lines[n1]) + ' ' + JSON.stringify(lines[n2]) + error; 
 	
 	intercept = 0
 	points = '';
