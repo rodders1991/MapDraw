@@ -485,7 +485,7 @@ var shaped = [];
 var error = '';
 
 
-document.getElementById("drawWrap").addEventListener('touchstart', function(e) {
+document.getElementById("drawWrap").addEventListener('touchstart', function() {
 
 	dragging = true;
 	error = '';
@@ -494,8 +494,11 @@ document.getElementById("drawWrap").addEventListener('touchstart', function(e) {
 	if(dragging == true)
 	{
 	document.getElementById("drawWrap").addEventListener('touchmove', function(e) {
-		points += e.pageX+','+e.pageY+ ' ';
-		shaped.push({x:e.pageX,y:e.pageY});
+		e.preventDefault();
+	 var touch = e.touches[0];
+    
+		points += touch.pageX+','+touch.pageY+ ' ';
+		shaped.push({x:touch.pageX,y:touch.pageY});
 		document.getElementById("line").setAttribute('points', points );
 	
 	},false);
