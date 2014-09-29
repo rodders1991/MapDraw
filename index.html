@@ -484,12 +484,12 @@ var dragging = false;
 var shaped = [];
 var error = '';
 
-$("#drawWrap").mousedown(function() {
+$("#drawWrap").on('mousedown touchstart',function() {
 	dragging = true;
 	error = '';
 	shaped.length = 0;
 	
-$("#drawWrap").vmousemove(function mouse(e)
+$("#drawWrap").on('mousemove touchmove',function mouse(e)
 {
 	
 	if(dragging == true)
@@ -502,7 +502,7 @@ $("#drawWrap").vmousemove(function mouse(e)
 
 });
 
-$('#drawWrap').on('mouseleave mouseup', function() {
+$('#drawWrap').on('mouseleave mouseup touchend', function() {
 	
 	document.getElementById("line").setAttribute('points', '' );
 	dragging = false;
