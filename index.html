@@ -484,11 +484,22 @@ var dragging = false;
 var shaped = [];
 var error = '';
 
-document.getElementById("drawWrap").addEventListener('touchmove', function(e) {
 
+document.getElementById("drawWrap").addEventListener('touchstart', function(e) {
+
+	dragging = true;
+	error = '';
+	shaped.length = 0;
+	
+	if(dragging == true)
+	{
+	document.getElementById("drawWrap").addEventListener('touchmove', function(e) {
 		points += e.pageX+','+e.pageY+ ' ';
 		shaped.push({x:e.pageX,y:e.pageY});
 		document.getElementById("line").setAttribute('points', points );
+	
+	},false);
+	}
 	
 },false);
 
