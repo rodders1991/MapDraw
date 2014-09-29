@@ -17,11 +17,11 @@
         George Ormrod
     </author>
 
-</widget>
-
 <preference name="phonegap-version" value="3.5.0" />
 <preference name="orientation" value="portrait" />
 <preference name="fullscreen" value="true" />
 
 <icon src="draw.png" />
 <gap:splash src="splash.png" />
+
+</widget>
