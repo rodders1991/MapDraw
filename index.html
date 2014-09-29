@@ -452,7 +452,7 @@ $("#zoomOut").click(function()
 	map.setZoom(myZoom);
 });
 
-$('#draw').vclick(function() { 
+$('#draw').click(function() { 
 
 $("#drawWrap").toggle();
 document.getElementById("line").setAttribute('points', '' );
@@ -485,7 +485,7 @@ var dragging = false;
 var shaped = [];
 var error = '';
 
-$("#drawWrap").vmousedown(function() {
+$("#drawWrap").mousedown(function() {
 	dragging = true;
 	error = '';
 	shaped.length = 0;
@@ -503,7 +503,7 @@ $("#drawWrap").vmousemove(function mouse(e)
 
 });
 
-$('#drawWrap').on('vmouseleave vmouseup', function() {
+$('#drawWrap').on('mouseleave mouseup', function() {
 	
 	document.getElementById("line").setAttribute('points', '' );
 	dragging = false;
