@@ -332,7 +332,18 @@ MakeShape.prototype.intesectTest = function (inPoints) {
 
         }
 
+
     }
+    
+    var distance = Math.sqrt(Math.pow((inPoints[inPoints.length - 1].x - inPoints[0].x),2) + Math.pow((inPoints[inPoints.length - 1].y - inPoints[0].y),2));
+
+    if (distance < 20)
+    {
+        return inPoints;
+
+    } else {
+        return false;
+   }
 
     return false;
 
